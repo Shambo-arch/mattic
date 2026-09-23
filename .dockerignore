@@ -1,0 +1,10 @@
+.venv
+virtenv
+.git
+.env
+__pycache__
+*.sqlite3
+media
+private_media
+staticfiles
+.ruff_cache

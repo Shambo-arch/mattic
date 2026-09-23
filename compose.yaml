@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-mattic_shop}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DB_HOST: db
+      USE_SQLITE: 'False'
+    ports:
+      - '8000:8000'
+    volumes:
+      - public_media:/app/media
+      - private_media:/app/private_media
+      - static_data:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:
+  public_media:
+  private_media:
+  static_data:
