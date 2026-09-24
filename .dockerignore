@@ -8,3 +8,7 @@ media
 private_media
 staticfiles
 .ruff_cache
+env
+.env.*
+!.env.example
+tests

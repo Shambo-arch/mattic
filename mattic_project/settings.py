@@ -17,6 +17,12 @@ ALLOWED_HOSTS = env.list(
     default=["localhost", "127.0.0.1", "suitandtiefashionshop.com", "www.suitandtiefashionshop.com"],
 )
 SITE_URL = env("SITE_URL", default="https://suitandtiefashionshop.com").rstrip("/")
+# Railway injects the service's public domain; trust it automatically.
+RAILWAY_PUBLIC_DOMAIN = env("RAILWAY_PUBLIC_DOMAIN", default="")
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+# Railway's health checker connects with this Host header.
+ALLOWED_HOSTS.append("healthcheck.railway.app")
 INSTALLED_APPS = [
     "core.admin_site.OwnerAdminConfig",
     "django.contrib.auth",
@@ -139,6 +145,8 @@ CORS_ALLOW_HEADERS = [*default_headers, "x-guest-token"]
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Kigali"
 USE_I18N = True
@@ -146,8 +154,10 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
+MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
+PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media")))
+# Serve public uploads from Django when no CDN/object storage sits in front (e.g. Railway volume).
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=False)
 STORAGES = {
     "default": {
         "BACKEND": env("PUBLIC_STORAGE_BACKEND", default="django.core.files.storage.FileSystemStorage")
@@ -161,6 +171,9 @@ MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
+# TLS terminates at the hosting proxy, which forwards the original scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0

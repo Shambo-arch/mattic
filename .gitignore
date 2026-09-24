@@ -3,6 +3,7 @@ virtenv/
 __pycache__/
 *.py[cod]
 .env
+env/
 media/
 private_media/
 staticfiles/
@@ -10,8 +11,5 @@ staticfiles/
 .coverage
 htmlcov/
 node_modules/
-frontend/dist/
-frontend/test-results/
-frontend/playwright-report/
-frontend/.e2e-data/
 .local-backups/
+*.sqlite3

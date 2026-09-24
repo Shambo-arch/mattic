@@ -1,19 +1,18 @@
-# Suit and Tie Fashion Shop: Django API and React storefront
+# Suit and Tie Fashion Shop: Django API
 
 Store name: **Suit and Tie Fashion Shop**. Intended production website: **https://suitandtiefashionshop.com**. The frontend metadata and domain links, Django host configuration, API documentation and seeded catalog use this identity. Applying migrations updates the previous store/demo brand names while preserving their records and product relationships. Domain registration, DNS and HTTPS hosting must be configured when deploying.
 
-A men's fashion REST API with **CUSTOMER** and **ADMIN** roles, variant inventory, and **manual MTN Mobile Money screenshot verification**. The React customer website and owner `/dashboard` in `frontend/` consume this backend. Payments use manual screenshot verification; there is no automatic MTN API integration.
+A men's fashion REST API with **CUSTOMER** and **ADMIN** roles, variant inventory, and **manual MTN Mobile Money screenshot verification**. The React storefront and owner dashboard live in a separate repository and consume this API. Payments use manual screenshot verification; there is no automatic MTN API integration.
 
 The existing `mattic_project` Django configuration package is retained. Django Admin is available for internal administration, alongside a complete dashboard API.
 
 Administrative access is restricted to the active `ADMIN` account matching `DASHBOARD_ADMIN_EMAIL` in the root `.env`. A blank setting disables administrative access. Other emails cannot be promoted to ADMIN, and stale admin flags do not bypass the dashboard, private payment proof, or Django Admin checks. Restart Django after changing this setting; use the configured email when running `createsuperuser`. Passwords are entered interactively and stored as Django password hashes.
 
-For the complete frontend setup, architecture, routes and UI details, see [frontend/README.md](frontend/README.md). Start Django on port 8000, then run `cd frontend`, `npm install` and `npm run dev` in a second terminal.
+Set the frontend's `VITE_API_BASE_URL` to this API's `/api/v1` URL and add the frontend origin to `CORS_ALLOWED_ORIGINS`.
 
 ## Project layout
 
 ```text
-frontend/               React storefront, owner dashboard, browser tests and design system
 mattic_project/          Environment settings, URLs, WSGI/ASGI, test configuration
 accounts/               Email user model, JWT authentication, customer addresses
 catalog/                Categories, brands, sizes, colors, products, images, variants
@@ -30,6 +29,7 @@ tests/                  API, security, transaction and PostgreSQL concurrency te
 schema.yml              Generated OpenAPI contract
 .github/workflows/      Python 3.12 / PostgreSQL CI checks
 Dockerfile
+railway.toml            Railway build, migrate-on-deploy and health check config
 compose.yaml
 requirements.txt        Exact dependency versions, including transitive dependencies
 .env.example            Configuration template; contains no real credentials
@@ -285,3 +285,20 @@ Limit request bodies at the reverse proxy as well as in Django. Set up database 
 Inventory, orders, carts and payments are read-only as raw Django Admin records to protect service invariants; payment verification/rejection actions call the same services as the dashboard. Use dashboard APIs for stock changes and fulfillment. Django Admin offers model browsing, product/reference/settings editing, payment proof viewing and review moderation. Superuser creation and account privilege management remain internal operations.
 
 There are no background email notifications, automatic MTN calls, staff roles, tax calculations, frontend pages or external refund processing. The dashboard payment queue is the administrator's notification mechanism. These choices follow the backend scope and avoid relying on external paid services.
+
+## Deploy on Railway
+
+`railway.toml` builds the Dockerfile, runs `migrate` before each deploy and health-checks `/healthz/`. Add a PostgreSQL database and a volume mounted at `/data`, then set these service variables:
+
+| Variable | Value |
+| --- | --- |
+| `SECRET_KEY` | Long random string |
+| `DEBUG` | `False` |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `MEDIA_ROOT` / `PRIVATE_MEDIA_ROOT` | `/data/media` / `/data/private_media` |
+| `SERVE_MEDIA` | `True` |
+| `RAILWAY_RUN_UID` | `0` (lets the app write to the volume) |
+| `DASHBOARD_ADMIN_EMAIL` | Owner email |
+| `CORS_ALLOWED_ORIGINS` | Frontend origin(s), e.g. `https://suitandtiefashionshop.com` |
+
+The Railway public domain is added to `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` automatically; add custom domains to `ALLOWED_HOSTS`.

@@ -23,7 +23,6 @@ services:
     volumes:
       - public_media:/app/media
       - private_media:/app/private_media
-      - static_data:/app/staticfiles
     depends_on:
       db:
         condition: service_healthy
@@ -31,4 +30,3 @@ volumes:
   postgres_data:
   public_media:
   private_media:
-  static_data:
