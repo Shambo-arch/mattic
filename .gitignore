@@ -3,7 +3,6 @@ virtenv/
 __pycache__/
 *.py[cod]
 .env
-*.sqlite3
 media/
 private_media/
 staticfiles/
